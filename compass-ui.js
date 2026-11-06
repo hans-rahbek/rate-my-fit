@@ -1,0 +1,10 @@
+'use strict';
+let compassOn=false;const compassCache=new WeakMap();
+function compassShapes(){let shapes=compassCache.get(game.points);if(!shapes){shapes=[0,1].map(group=>E.covarianceContour(game.points.filter(p=>p[2]===group)));compassCache.set(game.points,shapes)}return shapes}
+function clearCompassAxis(ellipse){return ellipse&&ellipse.rx>1e-8&&(ellipse.rx**2-ellipse.ry**2)/(ellipse.rx**2)>.05}
+function disableCompass(){compassOn=false}
+function enableCompass(){compassOn=true}
+function enableCompassDev(enabled){compassOn=enabled}
+function compassOverlay(line,layer){if(layer!=='foreground'||!hasPerk('compass')||!compassOn)return '';return compassShapes().map((ellipse,group)=>{if(!clearCompassAxis(ellipse))return '';trackAid('compass');const angle=ellipse.angle*Math.PI/180,radius=Math.min(.65,.75*ellipse.rx),dx=Math.cos(angle)*radius,dy=Math.sin(angle)*radius,c=ellipse.centre,color=group?'#387895':'#b45e4c';return `<g class="correlation-compass" aria-label="Group ${group?'B':'A'} major covariance axis"><path d="M${X(c[0]-dx)} ${Y(c[1]-dy)}L${X(c[0]+dx)} ${Y(c[1]+dy)}" stroke="#f1f0e5" stroke-width="6"/><path d="M${X(c[0]-dx)} ${Y(c[1]-dy)}L${X(c[0]+dx)} ${Y(c[1]+dy)}" stroke="${color}" stroke-width="3"/><circle cx="${X(c[0])}" cy="${Y(c[1])}" r="3" fill="${color}"/></g>`}).join('')}
+function renderCompass(){const unlocked=hasPerk('compass');$('compassToggle').disabled=!unlocked;$('compassToggle').checked=unlocked&&compassOn;$('compassNote').textContent=!unlocked?(records.best<500?'· clear 500 population':'· unlock for 40 RC'):!compassOn?'':compassShapes().some(s=>!s)?'Compass needs 3 points per group.':compassShapes().some(s=>!clearCompassAxis(s))?'Near-circular groups have no clear axis.':'Bars show group shape, not the optimal boundary.'}
+$('compassToggle').onchange=event=>{compassOn=hasPerk('compass')&&event.target.checked;draw()};draw();
